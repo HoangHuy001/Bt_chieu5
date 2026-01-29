@@ -1,250 +1,318 @@
-// ============ GLOBAL VARIABLES ============
-let allProducts = [];
-let filteredProducts = [];
-let currentPage = 1;
-let itemsPerPage = 10;
+//============ GLOBAL VARIABLES ============
+let allPosts = [];
+let allComments = [];
+let maxPostId = 0;
+let maxCommentId = 0;
+let editingPostId = null;
 
-// ============ LOAD DATA ============
-async function LoadData() {
-  try {
-    const response = await fetch("db.json");
-    allProducts = await response.json();
-    filteredProducts = [...allProducts];
-    renderProducts();
-  } catch (error) {
-    console.error("Error loading data:", error);
-  }
+const API_URL = 'http://localhost:3000';
+
+//============ LOAD DATA ============
+async function Load() {
+    try {
+        // Load posts
+        let postRes = await fetch(`${API_URL}/posts`);
+        allPosts = await postRes.json();
+        
+        // Load comments
+        let commentRes = await fetch(`${API_URL}/comments`);
+        allComments = await commentRes.json();
+        
+        // Initialize isDeleted field if not exists
+        allPosts = allPosts.map(post => ({
+            ...post,
+            isDeleted: post.isDeleted || false
+        }));
+        
+        // Calculate max IDs
+        maxPostId = Math.max(...allPosts.map(p => {
+            const num = typeof p.id === 'string' ? parseInt(p.id) : p.id;
+            return isNaN(num) ? 0 : num;
+        }), 0);
+        
+        maxCommentId = Math.max(...allComments.map(c => {
+            const num = typeof c.id === 'string' ? parseInt(c.id) : c.id;
+            return isNaN(num) ? 0 : num;
+        }), 0);
+        
+        RenderTable();
+    } catch (error) {
+        console.error("Error loading data:", error);
+    }
 }
 
-// ============ RENDER PRODUCTS ============
-function renderProducts() {
-  const tbody = document.querySelector(".table-id");
+//============ RENDER TABLE ============
+async function RenderTable() {
+    let body = document.getElementById("table-body");
+    body.innerHTML = "";
+    
+    for (const post of allPosts) {
+        const isDeleted = post.isDeleted;
+        const textDecoration = isDeleted ? "text-decoration: line-through; opacity: 0.6;" : "";
+        const deletedBadge = isDeleted ? ' <span class="deleted-badge">🗑️ Đã xóa</span>' : '';
+        const commentCount = allComments.filter(c => c.postId === post.id && !c.isDeleted).length;
+        
+        body.innerHTML += `
+            <tr style="${textDecoration}">
+                <td>${post.id}</td>
+                <td>${post.title}${deletedBadge}</td>
+                <td>👁️ ${post.views || 0}</td>
+                <td>
+                    <button class="btn btn-comments" onclick="OpenCommentsModal('${post.id}', '${post.title}')">
+                        💬 ${commentCount}
+                    </button>
+                </td>
+                <td class="action-buttons">
+                    <button class="btn btn-edit" onclick="Edit('${post.id}')">✏️ Sửa</button>
+                    <button class="btn ${isDeleted ? 'btn-restore' : 'btn-delete'}" 
+                        onclick="Delete('${post.id}')">
+                        ${isDeleted ? '↩️ Khôi phục' : '🗑️ Xóa'}
+                    </button>
+                </td>
+            </tr>
+        `;
+    }
+}
 
-  // Calculate pagination
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentProducts = filteredProducts.slice(startIndex, endIndex);
+//============ EDIT POST ============
+function Edit(id) {
+    const post = allPosts.find(p => p.id === id);
+    if (post) {
+        editingPostId = id;
+        document.getElementById("id_txt").value = id;
+        document.getElementById("id_txt").disabled = true;
+        document.getElementById("title_txt").value = post.title;
+        document.getElementById("views_txt").value = post.views || 0;
+        document.getElementById("save-btn").textContent = "✏️ Cập Nhật";
+    }
+}
 
-  const rows = currentProducts
-    .map((item) => {
-      return `
-        <tr>
-          <td><strong>${item.id}</strong></td>
-          <td>${item.title}</td>
-          <td><span style="color: #667eea; font-weight: 600;">$${item.price}</span></td>
-          <td><span style="background: #e8eaf6; padding: 4px 12px; border-radius: 20px; font-size: 13px;">${item.category.name}</span></td>
-          <td>
-            <div class="img-container">
-              <img src="${item.images[0]}" alt="${item.title}" width="50" height="50" class="product-img">
-              <div class="img-description">${item.description}</div>
+//============ ADD NEW POST ============
+function AddNew() {
+    editingPostId = null;
+    document.getElementById("id_txt").value = "";
+    document.getElementById("id_txt").disabled = false;
+    document.getElementById("title_txt").value = "";
+    document.getElementById("views_txt").value = "";
+    document.getElementById("save-btn").textContent = "➕ Thêm Mới";
+    document.getElementById("title_txt").focus();
+}
+
+//============ SAVE POST ============
+async function Save() {
+    let id = document.getElementById("id_txt").value.trim();
+    let title = document.getElementById("title_txt").value.trim();
+    let views = document.getElementById("views_txt").value;
+    
+    if (!title) {
+        alert("Vui lòng nhập tiêu đề!");
+        return;
+    }
+    
+    let res;
+    
+    if (editingPostId) {
+        // Update existing post
+        const post = allPosts.find(p => p.id === editingPostId);
+        if (post) {
+            post.title = title;
+            post.views = parseInt(views) || 0;
+            
+            res = await fetch(`${API_URL}/posts/${editingPostId}`, {
+                method: 'PUT',
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(post)
+            });
+        }
+    } else {
+        // Add new post
+        const newId = String(maxPostId + 1);
+        maxPostId++;
+        
+        res = await fetch(`${API_URL}/posts`, {
+            method: 'POST',
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                id: newId,
+                title: title,
+                views: parseInt(views) || 0,
+                isDeleted: false
+            })
+        });
+    }
+    
+    if (res.ok) {
+        Load();
+        AddNew();
+    }
+}
+
+//============ SOFT DELETE POST ============
+async function Delete(id) {
+    const post = allPosts.find(p => p.id === id);
+    if (!post) return;
+    
+    if (post.isDeleted) {
+        if (!confirm("Khôi phục bài viết này?")) return;
+        post.isDeleted = false;
+    } else {
+        if (!confirm("Xóa bài viết này? (Xóa mềm - có thể khôi phục)")) return;
+        post.isDeleted = true;
+    }
+    
+    let res = await fetch(`${API_URL}/posts/${id}`, {
+        method: 'PUT',
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(post)
+    });
+    
+    if (res.ok) {
+        Load();
+    }
+}
+
+//============ COMMENTS MANAGEMENT ============
+async function OpenCommentsModal(postId, postTitle) {
+    document.getElementById("commentsModal").style.display = "block";
+    document.getElementById("modal-title").textContent = `💬 Bình Luận - ${postTitle}`;
+    document.getElementById("current-post-id").value = postId;
+    document.getElementById("comment-input").value = "";
+    RenderComments(postId);
+    document.getElementById("comment-input").focus();
+}
+
+function CloseCommentsModal() {
+    document.getElementById("commentsModal").style.display = "none";
+}
+
+async function RenderComments(postId) {
+    const commentsList = document.getElementById("comments-list");
+    const comments = allComments.filter(c => c.postId === postId);
+    
+    if (comments.length === 0) {
+        commentsList.innerHTML = '<p class="no-comments">Chưa có bình luận nào</p>';
+        return;
+    }
+    
+    let html = '';
+    for (const comment of comments) {
+        const isDeleted = comment.isDeleted;
+        const textDecoration = isDeleted ? "text-decoration: line-through; opacity: 0.6;" : "";
+        const deletedBadge = isDeleted ? '<span class="deleted-badge">🗑️</span>' : '';
+        
+        html += `
+            <div class="comment-item" style="${textDecoration}">
+                <div class="comment-header">
+                    <strong>ID: ${comment.id}</strong> ${deletedBadge}
+                </div>
+                <p class="comment-text">${comment.text}</p>
+                <div class="comment-actions">
+                    <button class="btn btn-sm btn-edit" onclick="EditComment('${comment.id}', '${postId}')">✏️ Sửa</button>
+                    <button class="btn btn-sm ${isDeleted ? 'btn-restore' : 'btn-delete'}" 
+                        onclick="DeleteComment('${comment.id}', '${postId}')">
+                        ${isDeleted ? '↩️ Khôi phục' : '🗑️ Xóa'}
+                    </button>
+                </div>
             </div>
-          </td>
-          <td>
-            <button class="btn-action btn-edit" onclick="editProduct(${item.id})" data-bs-toggle="modal" data-bs-target="#productModal">
-              ✏️ Sửa
-            </button>
-            <button class="btn-action btn-delete" onclick="deleteProduct(${item.id})">
-              🗑️ Xóa
-            </button>
-          </td>
-        </tr>
-      `;
-    })
-    .join("");
-
-  tbody.innerHTML = rows;
-  renderPagination(totalPages);
-}
-
-// ============ PAGINATION ============
-function renderPagination(totalPages) {
-  const pagination = document.getElementById("pagination");
-  if (!pagination) return;
-
-  let paginationHTML = "";
-
-  // Previous button
-  paginationHTML += `
-    <li class="page-item ${currentPage === 1 ? "disabled" : ""}">
-      <a class="page-link" href="#" onclick="changePage(${currentPage - 1}); return false;">Trước</a>
-    </li>
-  `;
-
-  // Page numbers
-  for (let i = 1; i <= totalPages; i++) {
-    if (
-      i === 1 ||
-      i === totalPages ||
-      (i >= currentPage - 2 && i <= currentPage + 2)
-    ) {
-      paginationHTML += `
-        <li class="page-item ${i === currentPage ? "active" : ""}">
-          <a class="page-link" href="#" onclick="changePage(${i}); return false;">${i}</a>
-        </li>
-      `;
-    } else if (i === currentPage - 3 || i === currentPage + 3) {
-      paginationHTML +=
-        '<li class="page-item disabled"><span class="page-link">...</span></li>';
+        `;
     }
-  }
-
-  // Next button
-  paginationHTML += `
-    <li class="page-item ${currentPage === totalPages ? "disabled" : ""}">
-      <a class="page-link" href="#" onclick="changePage(${currentPage + 1}); return false;">Sau</a>
-    </li>
-  `;
-
-  pagination.innerHTML = paginationHTML;
+    
+    commentsList.innerHTML = html;
 }
 
-// ============ PAGE MANAGEMENT ============
-function changePage(page) {
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
-  if (page >= 1 && page <= totalPages) {
-    currentPage = page;
-    renderProducts();
-  }
-}
-
-// ============ ITEMS PER PAGE ============
-function changeItemsPerPage() {
-  itemsPerPage = parseInt(document.getElementById("itemsPerPage").value);
-  currentPage = 1;
-  renderProducts();
-}
-
-// ============ SEARCH ============
-document.addEventListener("DOMContentLoaded", function () {
-  const searchInput = document.getElementById("searchInput");
-  if (searchInput) {
-    searchInput.addEventListener("input", function (e) {
-      const searchTerm = e.target.value.toLowerCase();
-      filteredProducts = allProducts.filter((product) =>
-        product.title.toLowerCase().includes(searchTerm),
-      );
-      currentPage = 1;
-      renderProducts();
-    });
-  }
-});
-
-// ============ SORTING ============
-function handleSort() {
-  const sortValue = document.getElementById("sortSelect").value;
-  if (!sortValue) return;
-
-  const [type, order] = sortValue.split("-");
-
-  if (type === "name") {
-    filteredProducts.sort((a, b) => {
-      if (order === "asc") {
-        return a.title.localeCompare(b.title);
-      } else {
-        return b.title.localeCompare(a.title);
-      }
-    });
-  } else if (type === "price") {
-    filteredProducts.sort((a, b) => {
-      if (order === "asc") {
-        return a.price - b.price;
-      } else {
-        return b.price - a.price;
-      }
-    });
-  }
-
-  currentPage = 1;
-  renderProducts();
-}
-
-// ============ ADD PRODUCT MODAL ============
-function openAddModal() {
-  document.getElementById("modalTitle").textContent = "Thêm Sản Phẩm";
-  document.getElementById("productForm").reset();
-  document.getElementById("productId").value = "";
-}
-
-// ============ EDIT PRODUCT ============
-function editProduct(id) {
-  const product = allProducts.find((p) => p.id === id);
-  if (product) {
-    document.getElementById("modalTitle").textContent = "Sửa Sản Phẩm";
-    document.getElementById("productId").value = product.id;
-    document.getElementById("productTitle").value = product.title;
-    document.getElementById("productPrice").value = product.price;
-    document.getElementById("productDescription").value = product.description;
-    document.getElementById("productCategory").value = product.category.name;
-    document.getElementById("productImage").value = product.images[0];
-  }
-}
-
-// ============ SAVE PRODUCT ============
-function saveProduct() {
-  const id = document.getElementById("productId").value;
-  const title = document.getElementById("productTitle").value;
-  const price = parseFloat(document.getElementById("productPrice").value);
-  const description = document.getElementById("productDescription").value;
-  const categoryName = document.getElementById("productCategory").value;
-  const imageUrl = document.getElementById("productImage").value;
-
-  if (id) {
-    // Edit existing product
-    const index = allProducts.findIndex((p) => p.id === parseInt(id));
-    if (index !== -1) {
-      allProducts[index].title = title;
-      allProducts[index].price = price;
-      allProducts[index].description = description;
-      allProducts[index].category.name = categoryName;
-      allProducts[index].images[0] = imageUrl;
+async function AddComment() {
+    const postId = document.getElementById("current-post-id").value;
+    const text = document.getElementById("comment-input").value.trim();
+    
+    if (!text) {
+        alert("Vui lòng nhập nội dung bình luận!");
+        return;
     }
-  } else {
-    // Add new product
-    const newProduct = {
-      id: Math.max(...allProducts.map((p) => p.id)) + 1,
-      title: title,
-      slug: title.toLowerCase().replace(/\s+/g, "-"),
-      price: price,
-      description: description,
-      category: {
-        id: 1,
-        name: categoryName,
-        slug: categoryName.toLowerCase().replace(/\s+/g, "-"),
-      },
-      images: [imageUrl],
-      creationAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    allProducts.push(newProduct);
-  }
-
-  filteredProducts = [...allProducts];
-  currentPage = 1;
-  renderProducts();
-
-  // Close modal
-  const modal = bootstrap.Modal.getInstance(
-    document.getElementById("productModal"),
-  );
-  modal.hide();
-}
-
-// ============ DELETE PRODUCT ============
-function deleteProduct(id) {
-  if (confirm("Bạn có chắc chắn muốn xóa sản phẩm này?")) {
-    allProducts = allProducts.filter((p) => p.id !== id);
-    filteredProducts = [...allProducts];
-
-    // Adjust current page if needed
-    const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
-    if (currentPage > totalPages && totalPages > 0) {
-      currentPage = totalPages;
+    
+    const newCommentId = String(maxCommentId + 1);
+    maxCommentId++;
+    
+    const res = await fetch(`${API_URL}/comments`, {
+        method: 'POST',
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            id: newCommentId,
+            postId: postId,
+            text: text,
+            isDeleted: false
+        })
+    });
+    
+    if (res.ok) {
+        document.getElementById("comment-input").value = "";
+        const comment = await res.json();
+        allComments.push(comment);
+        RenderComments(postId);
     }
-
-    renderProducts();
-  }
 }
 
-// ============ INITIALIZE ============
-LoadData();
+async function EditComment(commentId, postId) {
+    const comment = allComments.find(c => c.id === commentId);
+    if (!comment) return;
+    
+    const newText = prompt("Chỉnh sửa bình luận:", comment.text);
+    if (!newText || !newText.trim()) return;
+    
+    comment.text = newText.trim();
+    
+    const res = await fetch(`${API_URL}/comments/${commentId}`, {
+        method: 'PUT',
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(comment)
+    });
+    
+    if (res.ok) {
+        RenderComments(postId);
+    }
+}
+
+async function DeleteComment(commentId, postId) {
+    const comment = allComments.find(c => c.id === commentId);
+    if (!comment) return;
+    
+    if (comment.isDeleted) {
+        if (!confirm("Khôi phục bình luận này?")) return;
+        comment.isDeleted = false;
+    } else {
+        if (!confirm("Xóa bình luận này?")) return;
+        comment.isDeleted = true;
+    }
+    
+    const res = await fetch(`${API_URL}/comments/${commentId}`, {
+        method: 'PUT',
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(comment)
+    });
+    
+    if (res.ok) {
+        RenderComments(postId);
+    }
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById("commentsModal");
+    if (event.target == modal) {
+        modal.style.display = "none";
+    }
+}
+
+//============ INITIALIZE ============
+Load();

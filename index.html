@@ -1,483 +1,418 @@
 <!DOCTYPE html>
 <html lang="vi">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Quản Lý Sản Phẩm</title>
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Bài Viết & Bình Luận</title>
     <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-
-      body {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        min-height: 100vh;
-        padding: 30px 0;
-      }
-
-      .header-section {
-        background: white;
-        border-radius: 15px;
-        padding: 30px;
-        margin-bottom: 30px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-      }
-
-      .header-section h1 {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        font-weight: 700;
-        margin-bottom: 25px;
-        font-size: 2.5rem;
-      }
-
-      .controls-section {
-        display: grid;
-        grid-template-columns: 1fr 1fr 1fr auto;
-        gap: 15px;
-        align-items: flex-end;
-      }
-
-      .search-wrapper {
-        position: relative;
-      }
-
-      .search-wrapper input {
-        padding-left: 40px;
-        border-radius: 8px;
-        border: 2px solid #e0e0e0;
-        transition: all 0.3s ease;
-      }
-
-      .search-wrapper input:focus {
-        border-color: #667eea;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-      }
-
-      .search-wrapper::before {
-        content: "🔍";
-        position: absolute;
-        left: 12px;
-        top: 12px;
-        font-size: 18px;
-      }
-
-      .form-select {
-        border-radius: 8px;
-        border: 2px solid #e0e0e0;
-        transition: all 0.3s ease;
-      }
-
-      .form-select:focus {
-        border-color: #667eea;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-      }
-
-      .btn-add-new {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border: none;
-        border-radius: 8px;
-        padding: 12px 28px;
-        font-weight: 600;
-        transition: all 0.3s ease;
-        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
-      }
-
-      .btn-add-new:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
-        color: white;
-      }
-
-      .table-section {
-        background: white;
-        border-radius: 15px;
-        overflow: hidden;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        margin-bottom: 30px;
-      }
-
-      .table {
-        margin-bottom: 0;
-      }
-
-      .table thead {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-      }
-
-      .table thead th {
-        border: none;
-        font-weight: 600;
-        padding: 18px 12px;
-      }
-
-      .table tbody tr {
-        border-bottom: 1px solid #f0f0f0;
-        transition: all 0.3s ease;
-      }
-
-      .table tbody tr:hover {
-        background-color: #f8f9ff;
-      }
-
-      .table td {
-        padding: 15px 12px;
-        vertical-align: middle;
-      }
-
-      .product-img {
-        cursor: pointer;
-        transition: transform 0.3s ease-in-out;
-        border-radius: 6px;
-        object-fit: cover;
-      }
-
-      .product-img:hover {
-        transform: scale(1.2);
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-      }
-
-      .img-container {
-        position: relative;
-        display: inline-block;
-      }
-
-      .img-description {
-        display: none;
-        position: absolute;
-        background: rgba(0, 0, 0, 0.95);
-        color: white;
-        padding: 12px;
-        border-radius: 8px;
-        z-index: 1000;
-        max-width: 280px;
-        font-size: 13px;
-        bottom: 65px;
-        left: 50%;
-        transform: translateX(-50%);
-        white-space: normal;
-        word-wrap: break-word;
-        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
-      }
-
-      .img-container:hover .img-description {
-        display: block;
-      }
-
-      .btn-action {
-        border-radius: 6px;
-        padding: 6px 14px;
-        font-size: 13px;
-        font-weight: 600;
-        transition: all 0.3s ease;
-        border: none;
-      }
-
-      .btn-edit {
-        background-color: #ffc107;
-        color: #333;
-      }
-
-      .btn-edit:hover {
-        background-color: #ffb300;
-        transform: translateY(-2px);
-        box-shadow: 0 3px 10px rgba(255, 193, 7, 0.3);
-      }
-
-      .btn-delete {
-        background-color: #dc3545;
-        color: white;
-      }
-
-      .btn-delete:hover {
-        background-color: #c82333;
-        transform: translateY(-2px);
-        box-shadow: 0 3px 10px rgba(220, 53, 69, 0.3);
-      }
-
-      .pagination-section {
-        display: flex;
-        justify-content: center;
-        margin-top: 20px;
-      }
-
-      .pagination {
-        gap: 5px;
-      }
-
-      .page-link {
-        border: 2px solid #667eea;
-        color: #667eea;
-        border-radius: 6px;
-        transition: all 0.3s ease;
-        font-weight: 600;
-      }
-
-      .page-link:hover {
-        background-color: #667eea;
-        color: white;
-      }
-
-      .page-item.active .page-link {
-        background-color: #667eea;
-        border-color: #667eea;
-        color: white;
-      }
-
-      .page-item.disabled .page-link {
-        color: #ccc;
-        border-color: #ccc;
-        cursor: not-allowed;
-      }
-
-      .modal-content {
-        border-radius: 12px;
-        border: none;
-        box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
-      }
-
-      .modal-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        border-radius: 12px 12px 0 0;
-      }
-
-      .modal-header .btn-close {
-        filter: brightness(0) invert(1);
-      }
-
-      .form-label {
-        font-weight: 600;
-        color: #333;
-        margin-bottom: 8px;
-      }
-
-      .form-control, .form-control:focus {
-        border-radius: 8px;
-        border: 2px solid #e0e0e0;
-        transition: all 0.3s ease;
-      }
-
-      .form-control:focus {
-        border-color: #667eea;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-      }
-
-      .modal-footer {
-        border-top: 1px solid #e0e0e0;
-      }
-
-      .btn-primary {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border: none;
-        border-radius: 8px;
-        font-weight: 600;
-        transition: all 0.3s ease;
-      }
-
-      .btn-primary:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
-      }
-
-      .container {
-        max-width: 1200px;
-      }
-
-      @media (max-width: 768px) {
-        .controls-section {
-          grid-template-columns: 1fr;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        .header-section h1 {
-          font-size: 1.8rem;
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #4366a6 100%);
+            min-height: 100vh;
+            padding: 20px;
         }
 
-        .table {
-          font-size: 14px;
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
         }
 
-        .btn-action {
-          padding: 4px 10px;
-          font-size: 12px;
+        h1 {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.2rem;
         }
-      }
+
+        /* Form Section */
+        .form-section {
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border: 2px solid #e8eaf6;
+        }
+
+        .form-section h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .form-group {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr auto;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .form-group input {
+            padding: 10px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            outline: none;
+        }
+
+        .form-group input:disabled {
+            background-color: #f0f0f0;
+            color: #999;
+            cursor: not-allowed;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        #save-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px 24px;
+        }
+
+        #save-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-edit {
+            background-color: #ffc107;
+            color: #333;
+        }
+
+        .btn-edit:hover {
+            background-color: #ffb300;
+            transform: translateY(-2px);
+        }
+
+        .btn-delete {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background-color: #c82333;
+            transform: translateY(-2px);
+        }
+
+        .btn-restore {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .btn-restore:hover {
+            background-color: #218838;
+            transform: translateY(-2px);
+        }
+
+        .btn-comments {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .btn-comments:hover {
+            background-color: #138496;
+            transform: translateY(-2px);
+        }
+
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+
+        /* Table Styles */
+        .table-section {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        thead th {
+            padding: 16px 12px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #667eea;
+        }
+
+        tbody td {
+            padding: 14px 12px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        tbody tr {
+            transition: all 0.3s ease;
+        }
+
+        tbody tr:hover {
+            background-color: #f8f9ff;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .deleted-badge {
+            background: #dc3545;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            margin-left: 8px;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 25px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 10px 10px 0 0;
+            margin: -25px -25px 20px -25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.3rem;
+        }
+
+        .close-btn {
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            background: none;
+            line-height: 1;
+        }
+
+        .close-btn:hover {
+            opacity: 0.8;
+        }
+
+        /* Comments Section */
+        #comments-list {
+            margin-bottom: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .comment-item {
+            background: #f8f9ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-bottom: 12px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .comment-item:hover {
+            background: #f0f2ff;
+        }
+
+        .comment-header {
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .comment-text {
+            color: #333;
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+
+        .comment-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .no-comments {
+            text-align: center;
+            color: #999;
+            padding: 20px;
+        }
+
+        .add-comment-section {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        #comment-input {
+            flex: 1;
+            padding: 10px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        #comment-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            outline: none;
+        }
+
+        .btn-add-comment {
+            background: #667eea;
+            color: white;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-add-comment:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 768px) {
+            .form-group {
+                grid-template-columns: 1fr;
+            }
+
+            .action-buttons {
+                flex-wrap: wrap;
+            }
+
+            table {
+                font-size: 12px;
+            }
+
+            thead th,
+            tbody td {
+                padding: 8px;
+            }
+        }
     </style>
-    <script defer src="/main.js"></script>
-  </head>
-  <body>
+</head>
+
+<body>
     <div class="container">
-      <!-- Header Section -->
-      <div class="header-section">
-        <h1 class="text-center">📦 Quản Lý Sản Phẩm</h1>
+        <h1>📝 Quản Lý Bài Viết & Bình Luận</h1>
 
-        <!-- Controls Section -->
-        <div class="controls-section">
-          <div class="search-wrapper">
-            <input
-              type="text"
-              id="searchInput"
-              class="form-control"
-              placeholder="Tìm kiếm sản phẩm..."
-            />
-          </div>
-
-          <div>
-            <select class="form-select" id="sortSelect" onchange="handleSort()">
-              <option value="">📊 Sắp xếp</option>
-              <option value="name-asc">Tên (A → Z)</option>
-              <option value="name-desc">Tên (Z → A)</option>
-              <option value="price-asc">Giá (Thấp → Cao)</option>
-              <option value="price-desc">Giá (Cao → Thấp)</option>
-            </select>
-          </div>
-
-          <div>
-            <select
-              class="form-select"
-              id="itemsPerPage"
-              onchange="changeItemsPerPage()"
-            >
-              <option value="5">📄 5 / trang</option>
-              <option value="10" selected>📄 10 / trang</option>
-              <option value="20">📄 20 / trang</option>
-              <option value="50">📄 50 / trang</option>
-            </select>
-          </div>
-
-          <button
-            class="btn btn-add-new"
-            data-bs-toggle="modal"
-            data-bs-target="#productModal"
-            onclick="openAddModal()"
-          >
-            ➕ Thêm Mới
-          </button>
-        </div>
-      </div>
-
-      <!-- Table Section -->
-      <div class="table-section">
-        <div class="table-responsive">
-          <table class="table table-hover">
-            <thead>
-              <tr>
-                <th style="width: 8%">ID</th>
-                <th style="width: 25%">Tên Sản Phẩm</th>
-                <th style="width: 12%">Giá</th>
-                <th style="width: 15%">Danh Mục</th>
-                <th style="width: 15%">Hình Ảnh</th>
-                <th style="width: 25%">Hành Động</th>
-              </tr>
-            </thead>
-            <tbody class="table-id"></tbody>
-          </table>
+        <!-- Form Section -->
+        <div class="form-section">
+            <h3>➕ Thêm/Sửa Bài Viết</h3>
+            <div class="form-group">
+                <input type="text" placeholder="ID (auto)" id="id_txt" />
+                <input type="text" placeholder="Tiêu đề bài viết" id="title_txt" />
+                <input type="number" placeholder="Lượt xem" id="views_txt" value="0" />
+                <button id="save-btn" onclick="Save()">➕ Thêm Mới</button>
+            </div>
+            <small style="color: #999; display: block; margin-top: 10px;">
+                💡 Để thêm bài viết mới, bỏ trống ID. Để sửa, click nút "Sửa" trong bảng.
+            </small>
         </div>
 
-        <!-- Pagination -->
-        <nav class="pagination-section">
-          <ul class="pagination" id="pagination"></ul>
-        </nav>
-      </div>
+        <!-- Table Section -->
+        <div class="table-section">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 8%">ID</th>
+                        <th style="width: 35%">Tiêu Đề</th>
+                        <th style="width: 15%">Lượt Xem</th>
+                        <th style="width: 12%">Bình Luận</th>
+                        <th style="width: 30%">Hành Động</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body">
+                </tbody>
+            </table>
+        </div>
     </div>
 
-    <!-- Product Modal -->
-    <div class="modal fade" id="productModal" tabindex="-1">
-      <div class="modal-dialog modal-dialog-centered">
+    <!-- Comments Modal -->
+    <div id="commentsModal" class="modal">
         <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="modalTitle">✨ Thêm Sản Phẩm Mới</h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-            ></button>
-          </div>
-          <div class="modal-body">
-            <form id="productForm">
-              <input type="hidden" id="productId" />
-              <div class="mb-3">
-                <label class="form-label">📝 Tên Sản Phẩm</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  id="productTitle"
-                  placeholder="Nhập tên sản phẩm..."
-                  required
-                />
-              </div>
-              <div class="mb-3">
-                <label class="form-label">💵 Giá</label>
-                <input
-                  type="number"
-                  class="form-control"
-                  id="productPrice"
-                  placeholder="Nhập giá..."
-                  required
-                />
-              </div>
-              <div class="mb-3">
-                <label class="form-label">📄 Mô Tả</label>
-                <textarea
-                  class="form-control"
-                  id="productDescription"
-                  rows="3"
-                  placeholder="Nhập mô tả sản phẩm..."
-                  required
-                ></textarea>
-              </div>
-              <div class="mb-3">
-                <label class="form-label">🏷️ Danh Mục</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  id="productCategory"
-                  placeholder="Nhập danh mục..."
-                  required
-                />
-              </div>
-              <div class="mb-3">
-                <label class="form-label">🖼️ Hình Ảnh URL</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  id="productImage"
-                  placeholder="Nhập URL hình ảnh..."
-                  required
-                />
-              </div>
-            </form>
-          </div>
-          <div class="modal-footer">
-            <button
-              type="button"
-              class="btn btn-secondary"
-              data-bs-dismiss="modal"
-            >
-              ✕ Hủy
-            </button>
-            <button
-              type="button"
-              class="btn btn-primary"
-              onclick="saveProduct()"
-            >
-              💾 Lưu
-            </button>
-          </div>
+            <div class="modal-header">
+                <h2 id="modal-title">💬 Bình Luận</h2>
+                <button class="close-btn" onclick="CloseCommentsModal()">&times;</button>
+            </div>
+
+            <input type="hidden" id="current-post-id" />
+
+            <!-- Add Comment Section -->
+            <div class="add-comment-section">
+                <input type="text" id="comment-input" placeholder="Viết bình luận mới..." />
+                <button class="btn-add-comment" onclick="AddComment()">➕ Thêm</button>
+            </div>
+
+            <!-- Comments List -->
+            <div id="comments-list">
+                <p class="no-comments">Đang tải...</p>
+            </div>
         </div>
-      </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  </body>
+    <script src="main.js"></script>
+</body>
+
 </html>
